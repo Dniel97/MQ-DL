@@ -1,0 +1,4 @@
+.idea/
+downloads/
+.DS_Store
+api/__pycache__/

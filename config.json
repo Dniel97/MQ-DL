@@ -1,7 +1,7 @@
 {
     "email": "",
     "password": "",
-    "output_dir": "",
+    "output_dir": "./downloads/",
     "quality": 4,
     "cover_size": 5,
     "fname_template": "{track_padded}. {title}",
