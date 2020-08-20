@@ -79,6 +79,36 @@ class Client():
         )
         return j['tracks']
 
+    def get_playlist_meta(self, pp_id, lang):
+        params = {
+            "catalog": "JP_MORAQUALITAS",
+            "lang": lang,
+            "rights": 2,
+            "limit": 200
+        }
+        headers = {
+            "apikey": self.key
+        }
+        j = self.make_call(
+            "GET", "v2.2/playlists/" + pp_id, params=params, headers=headers
+        )
+        return j['playlists']
+
+    def get_playlist_tracks(self, pp_id, lang):
+        params = {
+            "catalog": "JP_MORAQUALITAS",
+            "lang": lang,
+            "rights": 2,
+            "limit": 200
+        }
+        headers = {
+            "apikey": self.key
+        }
+        j = self.make_call(
+            "GET", "v2.2/playlists/" + pp_id + "/tracks", params=params, headers=headers
+        )
+        return j['tracks']
+
     def get_album_meta(self, alb_id, lang):
         params = {
             "catalog": "JP_MORAQUALITAS",

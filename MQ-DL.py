@@ -128,7 +128,7 @@ def parse_prefs():
 def check_url(url):
     regex = (
         r'https://content.mora-qualitas.com/(?:artist/([a-zA-Z-\d]+)/album/'
-        r'|(?:\?id=))(alb.\d{9}|tra.\d{9}|[a-zA-Z-\d*]+)'
+        r'|(?:\?id=))(alb.\d{9}|tra.\d{9}|pp.\d{9}|[a-zA-Z-\d*]+)'
     )
 
     m = re.match(regex, url)
@@ -369,6 +369,51 @@ def download_tra(tra_id):
         os.remove(cov_abs)
 
 
+def download_pp(pp_id):
+    pp_src_meta = client.get_playlist_meta(pp_id, cfg['meta_lang'])[0]
+    tra_src_meta = client.get_playlist_tracks(pp_id, cfg['meta_lang'])
+    total = len(tra_src_meta)
+
+    pp_fol = "{}".format(pp_src_meta['name'])
+    pp_abs = os.path.join(cfg['output_dir'], sanitize(pp_fol))
+    dir_setup(pp_abs)
+
+    print(pp_fol)
+    for num, track in enumerate(tra_src_meta, 1):
+        if not track['isStreamable']:
+            print("Track isn't allowed to be streamed.")
+            continue
+
+        alb_src_meta = client.get_album_meta(track['albumId'], cfg['meta_lang'])
+        alb_meta = parse_meta(alb_src_meta, total=total)
+
+        specs = query_quals(track['formats'] + track['losslessFormats'])
+        meta = parse_meta(track, meta=alb_meta, num=num)
+        pre_abs = os.path.join(pp_abs, str(num) + ".mq-dl")
+        post_abs = os.path.join(pp_abs, sanitize(parse_template(meta)) + specs['ext'])
+        if os.path.isfile(post_abs):
+            print("Track already exists locally.")
+            continue
+        stream_url = client.get_track_stream(specs['brate'], specs['fmt'],
+                                             track['id'])
+        download_track(stream_url, specs, meta['title'], num, total, pre_abs)
+
+        cov_abs = os.path.join(pp_abs, "cover.jpg")
+        try:
+            download_cov(track['albumId'], cov_abs)
+        except HTTPError as e:
+            print("Failed to get cover.")
+            err(e)
+            cov_abs = None
+        write_tags(pre_abs, meta, specs['fmt'], cov_abs)
+        try:
+            os.rename(pre_abs, post_abs)
+        except OSError as e:
+            print("Failed to rename track.")
+            err(e)
+        os.remove(cov_abs)
+
+
 def download_alb(alb_id):
     alb_src_meta = client.get_album_meta(alb_id, cfg['meta_lang'])
     tra_src_meta = client.get_tracks_meta(alb_id, cfg['meta_lang'])
@@ -425,3 +470,5 @@ if __name__ == "__main__":
             download_tra(id)
         elif id[:3] == 'alb':
             download_alb(id)
+        elif id[:2] == 'pp':
+            download_pp(id)
